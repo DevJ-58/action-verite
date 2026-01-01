@@ -1,5 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { Camera, Mic, Video, Users, Settings, Crown, Zap, Heart, Moon, Flame, Eye, LogOut, Plus, Play, X, Check, Volume2, VolumeX, Globe, ChevronRight, User, Bell, CreditCard, UserPlus, Search, Home, Clock, Award, TrendingUp, Target, Copy, QrCode, Share2, Wifi, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Camera, Mic, Video, Users, Settings, Crown, Zap, Heart, Moon, Flame, Eye, LogOut, Plus, Play, X, Check, Volume2, VolumeX, Globe, ChevronRight, User, Bell, CreditCard, UserPlus, Search, Home, Clock, Award, TrendingUp, Target, Copy, Share2, Wifi, Sparkles, Smartphone, Shield, Lock, Edit, Trash2, Save } from 'lucide-react';
+
+// Styles CSS pour animations
+const globalStyles = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .animate-slide-in {
+    animation: slideIn 0.4s ease-out;
+  }
+`;
+
+// Injection des styles
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.textContent = globalStyles;
+  document.head.appendChild(styleSheet);
+}
+
+// Composant Loader
+const Loader = () => (
+  <div className="flex items-center justify-center p-4">
+    <div className="relative">
+      <div className="w-12 h-12 border-4 border-zinc-800 border-t-blue-600 rounded-full animate-spin"></div>
+    </div>
+  </div>
+);
 
 // Traductions
 const translations = {
@@ -66,7 +108,7 @@ const translations = {
     notifications: "Notifications",
     itsYourTurn: "C'est ton tour !",
     chooseType: "Choisis ton défi",
-
+    
     categories: {
       fun: { name: "Juste pour rire", desc: "Des défis amusants pour briser la glace" },
       romantic: { name: "Romantique", desc: "Rapprochez vos cœurs" },
@@ -248,7 +290,16 @@ const App = () => {
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showCreateDareModal, setShowCreateDareModal] = useState(false);
+  const [showEditDareModal, setShowEditDareModal] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [customDaresList, setCustomDaresList] = useState([
+    { id: '1', title: 'Mon premier défi', category: 'fun', type: 'dare', content: 'Fais 20 pompes en chantant', icon: '😄' },
+    { id: '2', title: 'Question personnelle', category: 'romantic', type: 'truth', content: 'Quelle est ta plus grande peur en amour?', icon: '💕' },
+    { id: '3', title: 'Action secrète', category: 'spicy', type: 'dare', content: 'Envoie un message osé à quelqu\'un', icon: '🔥' }
+  ]);
+  const [selectedPlan, setSelectedPlan] = useState(null);
   const [friendsList, setFriendsList] = useState([
     { id: '1', username: 'Sarah', avatar: '👩', status: 'En ligne', code: 'SARAH1' },
     { id: '2', username: 'Marc', avatar: '👨', status: 'Hors ligne', code: 'MARC23' },
@@ -420,11 +471,12 @@ const App = () => {
   // Composant Bouteille 3D Réaliste avec effets
   const BottleSVG = ({ rotation }) => (
     <div 
-      className="transition-transform ease-out"
+      className="transition-transform"
       style={{ 
         transform: `rotate(${rotation}deg)`,
-        transitionDuration: gameState.isSpinning ? '3000ms' : '0ms',
-        transitionTimingFunction: gameState.isSpinning ? 'cubic-bezier(0.32, 0.94, 0.60, 1.00)' : 'ease'
+        transitionDuration: gameState.isSpinning ? '4000ms' : '0ms',
+        transitionTimingFunction: gameState.isSpinning ? 'cubic-bezier(0.17, 0.67, 0.35, 0.95)' : 'linear',
+        willChange: 'transform'
       }}
     >
       <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -456,14 +508,12 @@ const App = () => {
           </radialGradient>
         </defs>
         <g transform="translate(70, 70)" filter="url(#bottleShadow)">
-          {/* Corps principal de la bouteille */}
           <path 
             d="M -10 -45 L -10 -32 L -14 -22 L -14 38 Q -14 43 -10 43 L 10 43 Q 14 43 14 38 L 14 -22 L 10 -32 L 10 -45 Z" 
             fill="url(#bottleGradient)" 
             stroke="#1e40af" 
             strokeWidth="1.5"
           />
-          {/* Goulot */}
           <rect 
             x="-6" 
             y="-55" 
@@ -474,7 +524,6 @@ const App = () => {
             stroke="#1e40af" 
             strokeWidth="1.5"
           />
-          {/* Bouchon */}
           <rect 
             x="-7" 
             y="-58" 
@@ -483,7 +532,6 @@ const App = () => {
             rx="1" 
             fill="url(#capGradient)"
           />
-          {/* Reflets de verre - principal */}
           <ellipse 
             cx="-6" 
             cy="-5" 
@@ -492,7 +540,6 @@ const App = () => {
             fill="url(#glassShine)" 
             opacity="0.4"
           />
-          {/* Reflet secondaire */}
           <ellipse 
             cx="8" 
             cy="10" 
@@ -501,7 +548,6 @@ const App = () => {
             fill="white" 
             opacity="0.2"
           />
-          {/* Indicateur de direction (pointe rouge) */}
           <circle 
             cx="0" 
             cy="-52" 
@@ -509,7 +555,6 @@ const App = () => {
             fill="#ef4444"
             className="animate-pulse"
           />
-          {/* Ligne de col de bouteille pour plus de réalisme */}
           <line x1="-10" y1="-32" x2="-14" y2="-22" stroke="#1e40af" strokeWidth="1" opacity="0.5"/>
           <line x1="10" y1="-32" x2="14" y2="-22" stroke="#1e40af" strokeWidth="1" opacity="0.5"/>
         </g>
@@ -833,6 +878,457 @@ const App = () => {
     );
   };
 
+  // Modal de Paiement - VERSION PROFESSIONNELLE
+  const PaymentModal = () => {
+    const [paymentMethod, setPaymentMethod] = useState(null);
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [cardNumber, setCardNumber] = useState('');
+    const [cardExpiry, setCardExpiry] = useState('');
+    const [cardCVV, setCardCVV] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const plans = [
+      { id: 'weekly', name: 'Hebdomadaire', price: '300', period: '/semaine', popular: false, save: null },
+      { id: 'monthly', name: 'Mensuel', price: '2000', period: '/mois', popular: true, save: '30%' },
+      { id: 'yearly', name: 'Annuel', price: '10000', period: '/an', popular: false, save: '60%' }
+    ];
+
+    const mobileMoneyProviders = [
+      { 
+        id: 'orange', 
+        name: 'Orange Money', 
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Orange_logo.svg/200px-Orange_logo.svg.png',
+        bgColor: 'bg-zinc-900',
+        textColor: 'text-white'
+      },
+      { 
+        id: 'mtn', 
+        name: 'MTN Mobile Money', 
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/MTN_Logo.svg/200px-MTN_Logo.svg.png',
+        bgColor: 'bg-zinc-900',
+        textColor: 'text-white'
+      },
+      { 
+        id: 'moov', 
+        name: 'Moov Money', 
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Moov_africa_logo.svg/200px-Moov_africa_logo.svg.png',
+        bgColor: 'bg-zinc-900',
+        textColor: 'text-white'
+      },
+      { 
+        id: 'wave', 
+        name: 'Wave', 
+        logo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60"%3E%3Ctext x="10" y="40" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="%2300D9B4"%3E🐬 Wave%3C/text%3E%3C/svg%3E',
+        bgColor: 'bg-zinc-900',
+        textColor: 'text-white'
+      }
+    ];
+
+    const handlePayment = () => {
+      setIsProcessing(true);
+      setTimeout(() => {
+        setIsProcessing(false);
+        setHasSubscription(true);
+        setShowPaymentModal(false);
+        alert('✅ Paiement réussi ! Ton abonnement est maintenant actif.');
+      }, 2000);
+    };
+
+    const currentPlan = plans.find(p => p.id === selectedPlan) || plans[1];
+
+    return (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-6 overflow-y-auto">
+        <div className="bg-zinc-900 rounded-lg w-full max-w-md border border-zinc-800 my-6 shadow-2xl">
+          <div className="p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Paiement sécurisé</h2>
+              <button onClick={() => setShowPaymentModal(false)} className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Plan sélectionné */}
+            <div className="bg-black border border-zinc-800 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-gray-400 text-sm">Plan {currentPlan.name}</div>
+                  <div className="text-white text-2xl font-bold">{currentPlan.price} F CFA</div>
+                  <div className="text-gray-500 text-xs">{currentPlan.period}</div>
+                </div>
+                {currentPlan.save && (
+                  <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                    -{currentPlan.save}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Sélection de la méthode de paiement */}
+            {!paymentMethod && (
+              <div className="space-y-4">
+                <h3 className="text-white font-semibold mb-3">Mode de paiement</h3>
+                
+                {/* Mobile Money */}
+                <div className="space-y-2">
+                  <div className="text-gray-400 text-sm font-medium mb-3">Mobile Money</div>
+                  {mobileMoneyProviders.map(provider => (
+                    <button
+                      key={provider.id}
+                      onClick={() => setPaymentMethod(provider.id)}
+                      className="w-full bg-zinc-900 border-2 border-zinc-800 hover:border-zinc-700 rounded-lg p-4 transition-all flex items-center gap-4 group"
+                    >
+                      <div className="w-16 h-12 bg-black rounded flex items-center justify-center overflow-hidden">
+                        <img src={provider.logo} alt={provider.name} className="max-w-full max-h-full object-contain" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="text-white font-semibold">{provider.name}</div>
+                        <div className="text-gray-500 text-sm">Paiement instantané</div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-400" />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Carte bancaire */}
+                <div className="mt-4">
+                  <div className="text-gray-400 text-sm font-medium mb-3">Carte bancaire</div>
+                  <button
+                    onClick={() => setPaymentMethod('card')}
+                    className="w-full bg-zinc-900 border-2 border-zinc-800 hover:border-zinc-700 rounded-lg p-4 transition-all flex items-center gap-4 group"
+                  >
+                    <div className="w-16 h-12 bg-black rounded flex items-center justify-center">
+                      <CreditCard className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="text-white font-semibold">Visa / Mastercard</div>
+                      <div className="text-gray-500 text-sm">Paiement sécurisé SSL</div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-400" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Formulaire Mobile Money */}
+            {paymentMethod && paymentMethod !== 'card' && (
+              <div className="space-y-4">
+                <button onClick={() => setPaymentMethod(null)} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4">
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                  <span className="text-sm font-medium">Retour</span>
+                </button>
+
+                <div className="bg-black border border-zinc-800 rounded-lg p-4 mb-4 flex items-center gap-3">
+                  <div className="w-12 h-10 bg-zinc-900 rounded flex items-center justify-center overflow-hidden">
+                    <img 
+                      src={mobileMoneyProviders.find(p => p.id === paymentMethod)?.logo} 
+                      alt={mobileMoneyProviders.find(p => p.id === paymentMethod)?.name}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold">
+                      {mobileMoneyProviders.find(p => p.id === paymentMethod)?.name}
+                    </div>
+                    <div className="text-gray-400 text-sm">Entre ton numéro</div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-sm mb-2 font-medium">Numéro de téléphone</label>
+                  <div className="relative">
+                    <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="tel"
+                      placeholder="+225 XX XX XX XX XX"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <div className="text-blue-900 font-semibold text-sm mb-1">Paiement sécurisé</div>
+                      <div className="text-blue-700 text-xs">Tu recevras une notification pour valider le paiement.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handlePayment}
+                  disabled={!phoneNumber || isProcessing}
+                  className={`w-full py-3 rounded-lg font-semibold transition-all ${
+                    !phoneNumber || isProcessing
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  {isProcessing ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Traitement...
+                    </span>
+                  ) : (
+                    `Payer ${currentPlan.price} F CFA`
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Formulaire Carte bancaire */}
+            {paymentMethod === 'card' && (
+              <div className="space-y-4">
+                <button onClick={() => setPaymentMethod(null)} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4">
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                  <span className="text-sm font-medium">Retour</span>
+                </button>
+
+                <div className="bg-black border border-zinc-800 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2 text-white font-semibold mb-1">
+                    <CreditCard className="w-6 h-6" />
+                    Carte bancaire
+                  </div>
+                  <div className="text-gray-400 text-sm">Visa, Mastercard acceptées</div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-sm mb-2 font-medium">Numéro de carte</label>
+                  <input
+                    type="text"
+                    placeholder="1234 5678 9012 3456"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim())}
+                    maxLength="19"
+                    className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-2 font-medium">Expiration</label>
+                    <input
+                      type="text"
+                      placeholder="MM/AA"
+                      value={cardExpiry}
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (val.length >= 2) val = val.slice(0, 2) + '/' + val.slice(2, 4);
+                        setCardExpiry(val);
+                      }}
+                      maxLength="5"
+                      className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-sm mb-2 font-medium">CVV</label>
+                    <input
+                      type="text"
+                      placeholder="123"
+                      value={cardCVV}
+                      onChange={(e) => setCardCVV(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                      maxLength="3"
+                      className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Lock className="w-5 h-5 text-green-600 mt-0.5" />
+                    <div>
+                      <div className="text-green-900 font-semibold text-sm mb-1">Cryptage SSL 256 bits</div>
+                      <div className="text-green-700 text-xs">Tes informations sont protégées.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handlePayment}
+                  disabled={!cardNumber || !cardExpiry || !cardCVV || isProcessing}
+                  className={`w-full py-3 rounded-lg font-semibold transition-all ${
+                    !cardNumber || !cardExpiry || !cardCVV || isProcessing
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  {isProcessing ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Traitement...
+                    </span>
+                  ) : (
+                    `Payer ${currentPlan.price} F CFA`
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Créer/Éditer un défi - VERSION SOBRE
+  const CreateDareModal = ({ editingDare = null }) => {
+    const [dareData, setDareData] = useState(editingDare || {
+      title: '',
+      category: 'fun',
+      type: 'dare',
+      content: '',
+      icon: '🎯'
+    });
+
+    const categories = [
+      { id: 'fun', name: 'Fun', icon: '😄' },
+      { id: 'romantic', name: 'Romantique', icon: '💕' },
+      { id: 'spicy', name: 'Osé', icon: '🔥' },
+      { id: 'intimate', name: 'Intime', icon: '😈' }
+    ];
+
+    const availableIcons = ['🎯', '😄', '💕', '🔥', '😈', '⚡', '💎', '🌟', '👑', '🎭'];
+
+    const handleSave = () => {
+      if (!dareData.title || !dareData.content) {
+        alert('⚠️ Remplis tous les champs !');
+        return;
+      }
+
+      if (editingDare) {
+        setCustomDaresList(customDaresList.map(d => d.id === editingDare.id ? {...dareData, id: editingDare.id} : d));
+      } else {
+        setCustomDaresList([...customDaresList, {...dareData, id: Date.now().toString()}]);
+      }
+      
+      setShowCreateDareModal(false);
+      setShowEditDareModal(false);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-6 overflow-y-auto">
+        <div className="bg-zinc-900 rounded-lg w-full max-w-md border border-zinc-800 my-6 shadow-2xl">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">{editingDare ? 'Modifier' : 'Créer un défi'}</h2>
+              <button onClick={() => { setShowCreateDareModal(false); setShowEditDareModal(false); }} className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center hover:bg-gray-200">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-300 text-sm mb-2 font-medium">Titre</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Mon défi"
+                  value={dareData.title}
+                  onChange={(e) => setDareData({...dareData, title: e.target.value})}
+                  className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-sm mb-2 font-medium">Type</label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDareData({...dareData, type: 'truth'})}
+                    className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
+                      dareData.type === 'truth'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-zinc-800 text-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    Vérité
+                  </button>
+                  <button
+                    onClick={() => setDareData({...dareData, type: 'dare'})}
+                    className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
+                      dareData.type === 'dare'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-zinc-800 text-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    Action
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-sm mb-2 font-medium">Catégorie</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setDareData({...dareData, category: cat.id})}
+                      className={`p-3 rounded-lg transition-all border-2 ${
+                        dareData.category === cat.id
+                          ? 'bg-blue-50 border-blue-600 text-blue-900'
+                          : 'bg-zinc-900 border-zinc-800 text-gray-300 hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{cat.icon}</div>
+                      <div className="text-xs font-medium">{cat.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-sm mb-2 font-medium">Icône</label>
+                <div className="grid grid-cols-5 gap-2">
+                  {availableIcons.map(icon => (
+                    <button
+                      key={icon}
+                      onClick={() => setDareData({...dareData, icon})}
+                      className={`w-full aspect-square rounded-lg flex items-center justify-center text-2xl transition-all border-2 ${
+                        dareData.icon === icon
+                          ? 'bg-blue-50 border-blue-600 scale-110'
+                          : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-sm mb-2 font-medium">
+                  {dareData.type === 'truth' ? 'Question' : 'Action'}
+                </label>
+                <textarea
+                  placeholder={dareData.type === 'truth' ? 'Ex: Quelle est ta plus grande peur?' : 'Ex: Fais 10 pompes'}
+                  value={dareData.content}
+                  onChange={(e) => setDareData({...dareData, content: e.target.value})}
+                  rows="3"
+                  className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => { setShowCreateDareModal(false); setShowEditDareModal(false); }}
+                  className="flex-1 py-3 bg-zinc-800 text-gray-300 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Barre de navigation en bas (Mobile)
   const BottomNav = () => {
     const navItems = [
@@ -864,130 +1360,82 @@ const App = () => {
 
   // Home View - VERSION PERSONNALISÉE
   const HomeView = () => (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 pb-20">
+    <div className="min-h-screen bg-black pb-20">
       <div className="p-6">
-        {/* Header avec photo de profil */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-center gap-4 mb-6">
             {currentUser?.photoURL ? (
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-600 shadow-lg shadow-blue-600/30">
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-zinc-700">
                 <img src={currentUser.photoURL} alt="Profile" className="w-full h-full object-cover" />
               </div>
             ) : (
-              <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-blue-600 bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-600/30">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl border-2 border-zinc-700 bg-zinc-800">
                 {currentUser?.avatar || '👤'}
               </div>
             )}
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-white">
-                Salut, {currentUser?.username}
-              </h1>
-              {currentUser?.bio && (
-                <p className="text-gray-400 text-sm mt-1">{currentUser.bio}</p>
-              )}
+              <h1 className="text-xl font-bold text-white">Salut, {currentUser?.username}</h1>
+              {currentUser?.bio && <p className="text-gray-400 text-sm mt-1">{currentUser.bio}</p>}
             </div>
           </div>
         </div>
 
-        {/* Bouton principal stylisé */}
         <button 
           onClick={() => !hasSubscription ? setCurrentView('subscription') : setCurrentView('selectPlayers')} 
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-3xl p-8 mb-6 transition-all shadow-xl shadow-blue-600/20 relative overflow-hidden group"
+          className="w-full bg-blue-600 hover:bg-blue-700 rounded-lg p-6 mb-6 transition-all shadow-md"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/20 to-blue-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-          <div className="relative flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div className="text-left">
-              <div className="text-white text-2xl font-black mb-2 flex items-center gap-2">
-                <Zap className="w-7 h-7 text-yellow-400" />
-                {t.startGame}
-              </div>
-              <div className="text-blue-100 text-sm">
-                {hasSubscription ? 'Prêt à jouer ?' : 'Débloquez le plaisir'}
-              </div>
+              <div className="text-white text-xl font-bold mb-1">{t.startGame}</div>
+              <div className="text-blue-100 text-sm">{hasSubscription ? 'Prêt à jouer' : 'Abonne-toi pour jouer'}</div>
             </div>
-            <Play className="w-12 h-12 text-white drop-shadow-lg" />
+            <Play className="w-10 h-10 text-white" />
           </div>
         </button>
 
-        {/* Statistiques avec style */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
-            {val: 12, label: 'Parties', icon: Play, color: 'from-purple-600 to-purple-700'},
-            {val: friendsList.length, label: 'Amis', icon: Users, color: 'from-blue-600 to-blue-700'},
-            {val: 48, label: 'Défis', icon: Zap, color: 'from-orange-600 to-orange-700'}
+            {val: 12, label: 'Parties', icon: Play},
+            {val: friendsList.length, label: 'Amis', icon: Users},
+            {val: customDaresList.length, label: 'Défis', icon: Zap}
           ].map((stat, i) => (
-            <div key={i} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-4 text-center shadow-lg`}>
-              <stat.icon className="w-8 h-8 text-white mx-auto mb-2" />
+            <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-center">
+              <stat.icon className="w-6 h-6 text-gray-400 mx-auto mb-2" />
               <div className="text-2xl font-bold text-white mb-1">{stat.val}</div>
-              <div className="text-xs text-white/80 font-medium">{stat.label}</div>
+              <div className="text-xs text-gray-400 font-medium">{stat.label}</div>
             </div>
           ))}
         </div>
 
-        {/* Section Activités récentes */}
         <div className="mb-6">
-          <h2 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
-            <Eye className="w-5 h-5 text-blue-500" />
-            Activité récente
-          </h2>
-          <div className="space-y-3">
-            <button 
-              onClick={() => setCurrentView('history')}
-              className="w-full bg-gray-900/50 backdrop-blur border border-gray-800 rounded-2xl p-4 hover:bg-gray-800/50 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
-                  <Check className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 text-left">
-                  <div className="text-white font-semibold">Partie avec Sarah et Tom</div>
-                  <div className="text-gray-400 text-sm flex items-center gap-2">
-                    <Clock className="w-3 h-3" />
-                    Il y a 2 heures • 15 défis complétés
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-600" />
+          <h2 className="text-white font-semibold mb-3">Statistiques récentes</h2>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-green-900/30 rounded-lg flex items-center justify-center">
+                <Check className="w-6 h-6 text-green-500" />
               </div>
-            </button>
+              <div className="flex-1 text-left">
+                <div className="text-white font-semibold">Dernière partie</div>
+                <div className="text-gray-400 text-sm">Sarah, Tom • 15 défis complétés</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Section Premium */}
         {!hasSubscription && (
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-600 via-orange-600 to-red-600 p-6 shadow-2xl">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-3">
-                <Crown className="w-8 h-8 text-yellow-300 drop-shadow-lg" />
-                <h3 className="text-white font-black text-xl">Premium</h3>
-              </div>
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-white/95 text-sm">
-                  <Play className="w-4 h-4" />
-                  <span>Parties illimitées</span>
-                </div>
-                <div className="flex items-center gap-2 text-white/95 text-sm">
-                  <Flame className="w-4 h-4" />
-                  <span>Toutes les catégories</span>
-                </div>
-                <div className="flex items-center gap-2 text-white/95 text-sm">
-                  <Plus className="w-4 h-4" />
-                  <span>Défis personnalisés</span>
-                </div>
-                <div className="flex items-center gap-2 text-white/95 text-sm">
-                  <Video className="w-4 h-4" />
-                  <span>Appels vidéo</span>
-                </div>
-              </div>
-              <button 
-                onClick={() => setCurrentView('subscription')} 
-                className="bg-white text-orange-600 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-xl flex items-center gap-2"
-              >
-                <Crown className="w-5 h-5" />
-                Découvrir Premium
-              </button>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <Crown className="w-8 h-8 text-blue-600" />
+              <h3 className="text-white font-bold text-lg">Premium</h3>
             </div>
+            <div className="space-y-2 mb-4 text-sm text-gray-300">
+              <div className="flex items-center gap-2"><Check className="w-4 h-4" /> Parties illimitées</div>
+              <div className="flex items-center gap-2"><Check className="w-4 h-4" /> Toutes les catégories</div>
+              <div className="flex items-center gap-2"><Check className="w-4 h-4" /> Défis personnalisés</div>
+            </div>
+            <button onClick={() => setCurrentView('subscription')} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-all">
+              Découvrir Premium
+            </button>
           </div>
         )}
       </div>
@@ -1015,10 +1463,10 @@ const App = () => {
     };
 
     return (
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen bg-black">
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
-            <button onClick={() => setCurrentView('home')} className="w-10 h-10 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-center hover:bg-gray-800">
+            <button onClick={() => setCurrentView('home')} className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center hover:bg-zinc-800">
               <ChevronRight className="w-5 h-5 text-gray-400 rotate-180" />
             </button>
             <div className="flex-1">
@@ -1051,12 +1499,12 @@ const App = () => {
             {friendsList.map(friend => {
               const selected = isSelected(friend);
               return (
-                <button key={friend.id} onClick={() => togglePlayer(friend)} className={`w-full rounded-xl p-4 flex items-center gap-3 transition-all ${selected ? 'bg-blue-600 border-2 border-blue-500' : 'bg-gray-900 border border-gray-800 hover:bg-gray-800'}`}>
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${selected ? 'bg-blue-700' : 'bg-gray-800'}`}>{friend.avatar}</div>
+                <button key={friend.id} onClick={() => togglePlayer(friend)} className={`w-full rounded-xl p-4 flex items-center gap-3 transition-all ${selected ? 'bg-blue-600 border-2 border-blue-500' : 'bg-zinc-900 border border-zinc-800 hover:bg-zinc-800'}`}>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${selected ? 'bg-blue-700' : 'bg-zinc-800'}`}>{friend.avatar}</div>
                   <div className="flex-1 text-left">
                     <div className="text-white font-medium">{friend.username}</div>
                     <div className="flex items-center gap-1 text-sm">
-                      <div className={`w-2 h-2 rounded-full ${friend.status === 'En ligne' ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                      <div className={`w-2 h-2 rounded-full ${friend.status === 'En ligne' ? 'bg-green-500' : 'bg-gray-600'}`}></div>
                       <span className="text-gray-400">{friend.status}</span>
                     </div>
                   </div>
@@ -1066,12 +1514,12 @@ const App = () => {
             })}
           </div>
 
-          <button onClick={() => setShowAddFriendModal(true)} className="w-full bg-gray-900 border-2 border-dashed border-gray-700 rounded-xl p-4 flex items-center justify-center gap-2 hover:border-gray-600 hover:bg-gray-800 transition-all mb-6">
+          <button onClick={() => setShowAddFriendModal(true)} className="w-full bg-zinc-900 border-2 border-dashed border-zinc-700 rounded-xl p-4 flex items-center justify-center gap-2 hover:border-zinc-600 hover:bg-zinc-800 transition-all mb-6">
             <UserPlus className="w-5 h-5 text-gray-400" />
             <span className="text-gray-400 font-medium">{t.addFriend}</span>
           </button>
 
-          <button onClick={continueToMode} disabled={selectedPlayers.length < 2} className={`w-full py-4 rounded-xl font-semibold transition-all ${selectedPlayers.length >= 2 ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}>
+          <button onClick={continueToMode} disabled={selectedPlayers.length < 2} className={`w-full py-4 rounded-xl font-semibold transition-all ${selectedPlayers.length >= 2 ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-zinc-800 text-gray-500 cursor-not-allowed'}`}>
             Continuer ({selectedPlayers.length} joueurs)
           </button>
         </div>
@@ -1082,10 +1530,10 @@ const App = () => {
 
   // Select Mode View
   const SelectModeView = () => (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-black">
       <div className="p-6">
         <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => setCurrentView('selectPlayers')} className="w-10 h-10 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-center hover:bg-gray-800">
+          <button onClick={() => setCurrentView('selectPlayers')} className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center hover:bg-zinc-800">
             <ChevronRight className="w-5 h-5 text-gray-400 rotate-180" />
           </button>
           <h1 className="text-xl font-bold text-white">{t.selectMode}</h1>
@@ -1093,17 +1541,17 @@ const App = () => {
 
         <div className="space-y-4">
           {[
-            {mode: 'nearby', icon: Users, title: t.nearby, desc: 'Défis physiques et interactions en direct', color: 'from-blue-600 to-blue-700'},
-            {mode: 'distant', icon: Video, title: t.distant, desc: 'Défis à distance avec vidéo', color: 'from-gray-700 to-gray-800'}
+            {mode: 'nearby', icon: Users, title: t.nearby, desc: 'Défis physiques et interactions en direct'},
+            {mode: 'distant', icon: Video, title: t.distant, desc: 'Défis à distance avec vidéo'}
           ].map((item) => (
-            <button key={item.mode} onClick={() => { setGameState({...gameState, mode: item.mode}); setCurrentView('selectCategories'); }} className={`w-full bg-gradient-to-br ${item.color} rounded-2xl p-6 hover:opacity-90 transition-all`}>
+            <button key={item.mode} onClick={() => { setGameState({...gameState, mode: item.mode}); setCurrentView('selectCategories'); }} className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:bg-zinc-800 transition-all">
               <div className="flex items-center gap-5">
-                <div className="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center">
+                <div className="w-16 h-16 bg-zinc-800 rounded-xl flex items-center justify-center">
                   <item.icon className="w-8 h-8 text-white" />
                 </div>
                 <div className="flex-1 text-left">
                   <div className="text-white font-bold text-xl mb-1">{item.title}</div>
-                  <div className="text-gray-300 text-sm">{item.desc}</div>
+                  <div className="text-gray-400 text-sm">{item.desc}</div>
                 </div>
               </div>
             </button>
@@ -1137,10 +1585,10 @@ const App = () => {
     };
 
     return (
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen bg-black">
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
-            <button onClick={() => setCurrentView('selectMode')} className="w-10 h-10 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-center hover:bg-gray-800">
+            <button onClick={() => setCurrentView('selectMode')} className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center hover:bg-zinc-800">
               <ChevronRight className="w-5 h-5 text-gray-400 rotate-180" />
             </button>
             <h1 className="text-xl font-bold text-white">{t.selectCategories}</h1>
@@ -1152,7 +1600,7 @@ const App = () => {
               const isSelected = selected.includes(cat);
               
               return (
-                <button key={cat} onClick={() => toggleCategory(cat)} className={`relative rounded-xl p-4 transition-all border-2 ${isSelected ? 'bg-blue-600 border-blue-500' : 'bg-gray-900 border-gray-800 hover:border-gray-700'}`}>
+                <button key={cat} onClick={() => toggleCategory(cat)} className={`relative rounded-xl p-4 transition-all border-2 ${isSelected ? 'bg-blue-600 border-blue-500' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'}`}>
                   {isSelected && (
                     <div className="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center">
                       <Check className="w-3 h-3 text-blue-600" />
@@ -1166,7 +1614,7 @@ const App = () => {
             })}
           </div>
 
-          <button onClick={startGame} disabled={selected.length === 0} className={`w-full py-4 rounded-xl font-semibold transition-all ${selected.length > 0 ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}>
+          <button onClick={startGame} disabled={selected.length === 0} className={`w-full py-4 rounded-xl font-semibold transition-all ${selected.length > 0 ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-zinc-800 text-gray-500 cursor-not-allowed'}`}>
             {t.startPlaying} ({selected.length} catégories)
           </button>
         </div>
@@ -1179,8 +1627,7 @@ const App = () => {
     const spinBottle = () => {
       setGameState(prev => ({...prev, isSpinning: true, gamePhase: 'spin'}));
       
-      // Nombre de tours complets + angle final
-      const spins = 5 + Math.random() * 3;
+      const spins = 6 + Math.random() * 2; // Plus de tours
       const playerCount = gameState.players.length;
       const targetPlayerIndex = Math.floor(Math.random() * playerCount);
       const anglePerPlayer = 360 / playerCount;
@@ -1199,7 +1646,7 @@ const App = () => {
           isSpinning: false,
           gamePhase: 'choose'
         }));
-      }, 3000);
+      }, 4000); // 4 secondes au lieu de 3
     };
 
     const selectChallengeType = (type) => {
@@ -1349,36 +1796,59 @@ const App = () => {
           )}
 
           {gameState.gamePhase === 'challenge' && (
-            <div className="w-full max-w-sm">
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`text-xs font-bold px-3 py-1 rounded-full ${
-                    gameState.challengeType === 'truth' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+            <div className="w-full max-w-lg px-6 animate-fade-in">
+              {/* Carte principale du défi */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden mb-6 shadow-2xl">
+                {/* Header avec type et joueur */}
+                <div className="bg-zinc-800 border-b border-zinc-700 px-6 py-4 flex items-center justify-between">
+                  <div className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider ${
+                    gameState.challengeType === 'truth' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-orange-600 text-white'
                   }`}>
                     {gameState.challengeType === 'truth' ? 'VÉRITÉ' : 'ACTION'}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center text-lg">
+                    <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center text-lg border-2 border-zinc-600">
                       {currentPlayer?.avatar}
                     </div>
-                    <span className="text-white text-sm font-medium">{currentPlayer?.username}</span>
+                    <span className="text-white text-sm font-semibold">{currentPlayer?.username}</span>
                   </div>
                 </div>
-                <div className="text-white text-lg font-medium leading-relaxed">{gameState.currentChallenge}</div>
+
+                {/* Contenu du défi */}
+                <div className="px-6 py-8">
+                  <div className="text-white text-xl leading-relaxed text-center font-medium">
+                    {gameState.currentChallenge}
+                  </div>
+                </div>
               </div>
+
+              {/* Boutons d'action */}
               <div className="space-y-3">
-                <button onClick={validateChallenge} className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 rounded-xl transition-all flex items-center justify-center gap-2">
+                <button 
+                  onClick={validateChallenge} 
+                  className="w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg"
+                >
                   <Check className="w-5 h-5" />
-                  {t.completed}
+                  Défi accompli
                 </button>
+                
                 {gameState.mode === 'distant' && (
-                  <button onClick={() => setIsVideoEnabled(true)} className="w-full bg-gray-800 hover:bg-gray-700 text-white font-semibold py-4 rounded-xl transition-all flex items-center justify-center gap-2">
+                  <button 
+                    onClick={() => setIsVideoEnabled(true)} 
+                    className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold py-4 rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
                     <Video className="w-5 h-5" />
-                    {t.videoCall}
+                    Lancer l'appel vidéo
                   </button>
                 )}
-                <button onClick={skipChallenge} className="w-full bg-gray-900 border border-gray-800 hover:bg-gray-800 text-white font-semibold py-4 rounded-xl transition-all">
-                  {t.skip}
+                
+                <button 
+                  onClick={skipChallenge} 
+                  className="w-full bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-95 text-gray-300 font-semibold py-4 rounded-xl transition-all"
+                >
+                  Passer ce défi
                 </button>
               </div>
             </div>
@@ -1388,195 +1858,447 @@ const App = () => {
     );
   };
 
-  // Subscription View
+  // Subscription View - VERSION PROFESSIONNELLE
   const SubscriptionView = () => {
     const plans = [
-      { id: 'weekly', name: t.weekly, price: '500', period: '/semaine', popular: false },
-      { id: 'monthly', name: t.monthly, price: '2000', period: '/mois', popular: true },
-      { id: 'yearly', name: t.yearly, price: '10000', period: '/an', popular: false }
+      { id: 'weekly', name: t.weekly, price: '300', period: '/semaine', popular: false, save: null },
+      { id: 'monthly', name: t.monthly, price: '2000', period: '/mois', popular: true, save: '30%' },
+      { id: 'yearly', name: t.yearly, price: '10000', period: '/an', popular: false, save: '60%' }
     ];
 
+    const handleSelectPlan = (planId) => {
+      setSelectedPlan(planId);
+      setShowPaymentModal(true);
+    };
+
     return (
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen bg-black">
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
-            <button onClick={() => setCurrentView('home')} className="w-10 h-10 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-center hover:bg-gray-800">
+            <button onClick={() => setCurrentView('home')} className="w-10 h-10 bg-zinc-900 border border-zinc-700 rounded-lg flex items-center justify-center hover:bg-black">
               <ChevronRight className="w-5 h-5 text-gray-400 rotate-180" />
             </button>
             <h1 className="text-xl font-bold text-white">{t.subscription}</h1>
           </div>
 
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6 text-center">
-            <Crown className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-            <h2 className="text-white text-xl font-bold mb-2">{t.subscribeNow}</h2>
-            <p className="text-gray-400 text-sm">Profite de toutes les fonctionnalités premium</p>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 mb-6 text-center">
+            <Crown className="w-16 h-16 text-blue-600 mx-auto mb-3" />
+            <h2 className="text-white text-2xl font-bold mb-2">{t.subscribeNow}</h2>
+            <p className="text-gray-400 text-sm">Accède à toutes les fonctionnalités premium</p>
           </div>
 
           <div className="space-y-3 mb-6">
             {plans.map(plan => (
-              <button key={plan.id} onClick={() => { setHasSubscription(true); setCurrentView('home'); }} className={`w-full rounded-xl p-5 transition-all relative ${plan.popular ? 'bg-blue-600 border-2 border-blue-500' : 'bg-gray-900 border border-gray-800 hover:bg-gray-800'}`}>
+              <button 
+                key={plan.id} 
+                onClick={() => handleSelectPlan(plan.id)} 
+                className={`w-full rounded-lg p-5 transition-all relative border-2 ${
+                  plan.popular 
+                    ? 'bg-blue-50 border-blue-600' 
+                    : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
+                }`}
+              >
                 {plan.popular && (
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-gray-900 px-3 py-1 rounded-full text-xs font-bold">
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
                     LE PLUS POPULAIRE
+                  </div>
+                )}
+                {plan.save && (
+                  <div className="absolute -top-2.5 right-4 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                    -{plan.save}
                   </div>
                 )}
                 <div className="flex items-center justify-between">
                   <div className="text-left">
                     <div className="text-white font-bold text-lg mb-1">{plan.name}</div>
-                    <div className="text-sm" style={{color: plan.popular ? '#93c5fd' : '#9ca3af'}}>Toutes les fonctionnalités</div>
+                    <div className="text-sm flex items-center gap-2 text-gray-400">
+                      <Check className="w-4 h-4" />
+                      Toutes les fonctionnalités
+                    </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-white font-bold text-2xl">{plan.price}F</div>
-                    <div className="text-sm" style={{color: plan.popular ? '#93c5fd' : '#9ca3af'}}>{plan.period}</div>
+                    <div className="text-white font-bold text-3xl">{plan.price} F</div>
+                    <div className="text-sm font-medium text-gray-400">{plan.period}</div>
                   </div>
                 </div>
               </button>
             ))}
           </div>
 
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
-            <div className="text-white font-semibold mb-3">Ce qui est inclus :</div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-4 mb-6">
+            <div className="text-white font-bold mb-3">Ce qui est inclus :</div>
             {[
-              { icon: Zap, text: t.unlimitedGames },
+              { icon: Play, text: t.unlimitedGames },
               { icon: Heart, text: t.allCategories },
               { icon: Plus, text: t.customDaresFeature },
               { icon: Video, text: t.videoCallFeature }
             ].map((feature, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
-                  <feature.icon className="w-4 h-4 text-gray-400" />
+                <div className="w-10 h-10 bg-zinc-800 rounded-lg flex items-center justify-center">
+                  <feature.icon className="w-5 h-5 text-gray-300" />
                 </div>
-                <span className="text-gray-300 text-sm">{feature.text}</span>
+                <span className="text-gray-300 font-medium">{feature.text}</span>
               </div>
             ))}
           </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <div className="text-blue-900 font-semibold text-sm mb-1">Paiement 100% sécurisé</div>
+                <div className="text-blue-700 text-xs">Mobile Money et Carte bancaire acceptées.</div>
+              </div>
+            </div>
+          </div>
         </div>
+        {showPaymentModal && <PaymentModal />}
       </div>
     );
   };
 
-  // Friends View - VERSION PERSONNALISÉE
-  const FriendsView = () => (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 pb-20">
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-black text-white mb-2">Mes amis</h1>
-          <p className="text-gray-400">{friendsList.length} ami{friendsList.length > 1 ? 's' : ''} • {friendsList.filter(f => f.status === 'En ligne').length} en ligne</p>
-        </div>
+  // Friends View - VERSION PROFESSIONNELLE COMPLÈTE
+  const FriendsView = () => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [enteredCode, setEnteredCode] = useState('');
+    const userCode = currentUser?.inviteCode || generateInviteCode();
 
-        {/* Bouton ajouter */}
-        <button 
-          onClick={() => setShowAddFriendModal(true)} 
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-2xl p-5 flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-600/20 mb-6"
-        >
-          <UserPlus className="w-6 h-6 text-white" />
-          <span className="text-white font-bold text-lg">{t.addFriend}</span>
-        </button>
+    const searchResults = [
+      { id: '6', username: 'Alex', avatar: '👨‍🦰', status: 'En ligne', code: 'ALEX99' },
+      { id: '7', username: 'Sophie', avatar: '👩‍🦱', status: 'En ligne', code: 'SOPH12' },
+      { id: '8', username: 'Lucas', avatar: '👨‍🦲', status: 'Hors ligne', code: 'LUC456' }
+    ].filter(u => u.username.toLowerCase().includes(searchQuery.toLowerCase()));
 
-        {/* Liste des amis */}
-        <div className="space-y-3">
-          {friendsList.map(friend => (
-            <div key={friend.id} className="bg-gray-900/50 backdrop-blur border border-gray-800 rounded-2xl p-4 hover:bg-gray-800/50 transition-all">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center text-3xl shadow-lg">
-                    {friend.avatar}
-                  </div>
-                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-gray-900 ${
-                    friend.status === 'En ligne' ? 'bg-green-500' : 'bg-gray-500'
-                  }`}></div>
-                </div>
-                <div className="flex-1">
-                  <div className="text-white font-bold text-lg">{friend.username}</div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className={friend.status === 'En ligne' ? 'text-green-400' : 'text-gray-500'}>
-                      {friend.status}
-                    </span>
-                    {friend.status === 'En ligne' && <span className="text-gray-600">• Disponible</span>}
-                  </div>
-                </div>
-                <button className="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-xl flex items-center justify-center transition-colors">
-                  <Play className="w-6 h-6 text-white" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {showAddFriendModal && <AddFriendModal />}
-      <BottomNav />
-    </div>
-  );
+    const sendGameInvite = (friend) => {
+      // Simuler l'envoi d'une invitation
+      setPendingInvitations([...pendingInvitations, {
+        id: Date.now().toString(),
+        friendId: friend.id,
+        friendName: friend.username,
+        status: 'pending', // pending, accepted, refused
+        sentAt: new Date()
+      }]);
+      alert(`✉️ Invitation envoyée à ${friend.username} !`);
+    };
 
-  // Custom Dares View - VERSION PERSONNALISÉE
-  const CustomDaresView = () => (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 pb-20">
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-black text-white mb-2">Mes défis</h1>
-          <p className="text-gray-400">Personnalise ton expérience de jeu</p>
-        </div>
+    const addFriend = (friend) => {
+      if (!friendsList.find(f => f.id === friend.id)) {
+        setFriendsList([...friendsList, {...friend, code: friend.code || generateInviteCode()}]);
+        alert(`✅ ${friend.username} ajouté à tes amis !`);
+      }
+    };
 
-        {/* Carte d'ajout */}
-        <button className="w-full bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-3xl p-8 mb-6 transition-all shadow-xl shadow-blue-600/20 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/20 to-blue-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-          <div className="relative">
-            <Plus className="w-16 h-16 text-white mx-auto mb-4 drop-shadow-lg" />
-            <h2 className="text-white text-2xl font-black mb-2">Créer un défi</h2>
-            <p className="text-blue-100 text-sm">Ajoute tes propres questions et actions</p>
+    const addFriendByCode = () => {
+      if (enteredCode.length === 6) {
+        // Simuler l'ajout par code
+        addFriend({ 
+          id: Date.now().toString(), 
+          username: 'Nouvel ami', 
+          avatar: '👤', 
+          status: 'Hors ligne', 
+          code: enteredCode 
+        });
+        setEnteredCode('');
+      }
+    };
+
+    const copyCode = () => {
+      navigator.clipboard.writeText(userCode);
+      alert('📋 Code copié !');
+    };
+
+    return (
+      <div className="min-h-screen bg-black pb-20">
+        <div className="p-6">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-white mb-1">Mes amis</h1>
+            <p className="text-gray-400 text-sm">{friendsList.length} ami{friendsList.length > 1 ? 's' : ''} • {friendsList.filter(f => f.status === 'En ligne').length} en ligne</p>
           </div>
-        </button>
 
-        {/* Liste des défis personnalisés */}
-        <div className="space-y-3">
-          <h2 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-500" />
-            Tes créations (3)
-          </h2>
-          {[
-            { title: 'Mon premier défi', category: 'Fun', icon: '😄', color: 'from-purple-600 to-purple-700' },
-            { title: 'Question personnelle', category: 'Romantique', icon: '💕', color: 'from-pink-600 to-pink-700' },
-            { title: 'Action secrète', category: 'Osé', icon: '🔥', color: 'from-orange-600 to-red-600' }
-          ].map((dare, i) => (
-            <div key={i} className="bg-gray-900/50 backdrop-blur border border-gray-800 rounded-2xl p-4 hover:bg-gray-800/50 transition-all">
-              <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 bg-gradient-to-br ${dare.color} rounded-xl flex items-center justify-center text-2xl shadow-lg`}>
-                  {dare.icon}
+          {/* Section 1: Mes amis */}
+          <div className="mb-6">
+            <h2 className="text-white font-semibold mb-3 flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Liste d'amis
+            </h2>
+            <div className="space-y-2">
+              {friendsList.map(friend => {
+                const hasPendingInvite = pendingInvitations.find(inv => inv.friendId === friend.id && inv.status === 'pending');
+                
+                return (
+                  <div key={friend.id} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-all">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center text-2xl">
+                          {friend.avatar}
+                        </div>
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white ${
+                          friend.status === 'En ligne' ? 'bg-green-500' : 'bg-gray-400'
+                        }`}></div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-white font-semibold">{friend.username}</div>
+                        <div className="text-gray-500 text-sm">{friend.status}</div>
+                      </div>
+                      {friend.status === 'En ligne' && (
+                        <button 
+                          onClick={() => sendGameInvite(friend)}
+                          disabled={hasPendingInvite}
+                          className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                            hasPendingInvite
+                              ? 'bg-zinc-800 text-gray-400 cursor-not-allowed'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          }`}
+                        >
+                          {hasPendingInvite ? (
+                            <>
+                              <Clock className="w-4 h-4" />
+                              En attente
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4" />
+                              Jouer
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 2: Rechercher un ami */}
+          <div className="mb-6">
+            <h2 className="text-white font-semibold mb-3 flex items-center gap-2">
+              <Search className="w-5 h-5" />
+              Rechercher un ami
+            </h2>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Nom d'utilisateur..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-black border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              {searchQuery && searchResults.length > 0 && (
+                <div className="space-y-2 pt-3 border-t border-zinc-800">
+                  <div className="text-gray-400 text-sm font-medium mb-2">Résultats ({searchResults.length})</div>
+                  {searchResults.map(user => (
+                    <div key={user.id} className="flex items-center gap-3 p-3 bg-black rounded-lg hover:bg-zinc-800 transition-colors">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-xl">
+                        {user.avatar}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-white font-medium">{user.username}</div>
+                        <div className="text-gray-500 text-xs">Code: {user.code}</div>
+                      </div>
+                      <button 
+                        onClick={() => addFriend(user)}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        Ajouter
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex-1">
-                  <div className="text-white font-bold">{dare.title}</div>
-                  <div className="text-gray-400 text-sm">Catégorie: {dare.category}</div>
+              )}
+
+              {searchQuery && searchResults.length === 0 && (
+                <div className="text-center py-6 text-gray-500 text-sm">
+                  Aucun résultat pour "{searchQuery}"
                 </div>
-                <button className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700">
-                  <Eye className="w-5 h-5 text-gray-400" />
+              )}
+            </div>
+          </div>
+
+          {/* Section 3: Code d'invitation */}
+          <div className="mb-6">
+            <h2 className="text-white font-semibold mb-3 flex items-center gap-2">
+              <Copy className="w-5 h-5" />
+              Code d'invitation
+            </h2>
+            
+            {/* Mon code */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 mb-3">
+              <div className="text-gray-400 text-sm font-medium mb-2">Mon code</div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-black border border-zinc-700 rounded-lg px-4 py-3">
+                  <div className="text-2xl font-bold text-white tracking-widest font-mono">{userCode}</div>
+                </div>
+                <button 
+                  onClick={copyCode}
+                  className="px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copier
+                </button>
+              </div>
+              <p className="text-gray-500 text-xs mt-2">Partage ce code avec tes amis</p>
+            </div>
+
+            {/* Entrer un code */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <div className="text-gray-400 text-sm font-medium mb-2">Entrer un code</div>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  placeholder="ABCD12"
+                  value={enteredCode}
+                  onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
+                  maxLength={6}
+                  className="flex-1 px-4 py-3 bg-black border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-xl font-bold tracking-widest font-mono"
+                />
+                <button 
+                  onClick={addFriendByCode}
+                  disabled={enteredCode.length !== 6}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                    enteredCode.length === 6
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  Ajouter
                 </button>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* Inspiration */}
-        <div className="mt-6 bg-gray-900/30 backdrop-blur border border-gray-800 rounded-2xl p-5">
-          <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-yellow-500" />
-            Besoin d'inspiration ?
-          </h3>
-          <p className="text-gray-400 text-sm mb-3">
-            Découvre des exemples de défis créés par la communauté
-          </p>
-          <button className="text-blue-500 text-sm font-semibold hover:text-blue-400 transition-colors flex items-center gap-1">
-            Voir les suggestions 
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {/* Invitations en attente */}
+          {pendingInvitations.filter(inv => inv.status === 'pending').length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-white font-semibold mb-3 flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Invitations en attente ({pendingInvitations.filter(inv => inv.status === 'pending').length})
+              </h2>
+              <div className="space-y-2">
+                {pendingInvitations
+                  .filter(inv => inv.status === 'pending')
+                  .map(invite => (
+                    <div key={invite.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-5 h-5 text-yellow-600" />
+                        <div className="flex-1">
+                          <div className="text-white font-medium">En attente de {invite.friendName}</div>
+                          <div className="text-gray-400 text-sm">Invitation envoyée</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
+        <BottomNav />
       </div>
-      <BottomNav />
-    </div>
-  );
+    );
+  };
+
+  // Custom Dares View - VERSION SOBRE ET INTUITIVE
+  const CustomDaresView = () => {
+    const [editingDare, setEditingDare] = useState(null);
+
+    const deleteDare = (id) => {
+      if (window.confirm('Supprimer ce défi ?')) {
+        setCustomDaresList(customDaresList.filter(d => d.id !== id));
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-black pb-20">
+        <div className="p-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-white mb-1">Mes défis personnalisés</h1>
+            <p className="text-gray-400 text-sm">{customDaresList.length} défi{customDaresList.length > 1 ? 's' : ''} créé{customDaresList.length > 1 ? 's' : ''}</p>
+          </div>
+
+          {/* Bouton d'ajout simple */}
+          <button 
+            onClick={() => setShowCreateDareModal(true)}
+            className="w-full bg-blue-600 hover:bg-blue-700 rounded-lg p-5 mb-6 transition-all flex items-center justify-center gap-3"
+          >
+            <Plus className="w-6 h-6 text-white" />
+            <span className="text-white font-semibold text-lg">Créer un nouveau défi</span>
+          </button>
+
+          {/* Liste des défis */}
+          {customDaresList.length > 0 ? (
+            <div className="space-y-3">
+              <h2 className="text-white font-semibold mb-3">Mes créations</h2>
+              {customDaresList.map((dare) => (
+                <div key={dare.id} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-zinc-800 rounded-lg flex items-center justify-center text-2xl flex-shrink-0">
+                      {dare.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white font-semibold mb-1">{dare.title}</div>
+                      <div className="text-gray-400 text-sm mb-2 line-clamp-2">{dare.content}</div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          dare.type === 'truth' 
+                            ? 'bg-blue-100 text-blue-700' 
+                            : 'bg-orange-100 text-orange-700'
+                        }`}>
+                          {dare.type === 'truth' ? 'Vérité' : 'Action'}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-zinc-800 text-gray-300 font-medium">
+                          {dare.category}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button 
+                        onClick={() => {
+                          setEditingDare(dare);
+                          setShowEditDareModal(true);
+                        }}
+                        className="w-9 h-9 bg-zinc-800 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                        title="Modifier"
+                      >
+                        <Edit className="w-4 h-4 text-gray-400" />
+                      </button>
+                      <button 
+                        onClick={() => deleteDare(dare.id)}
+                        className="w-9 h-9 bg-zinc-800 hover:bg-red-100 rounded-lg flex items-center justify-center transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-600" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Plus className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-white font-semibold text-lg mb-2">Aucun défi personnalisé</h3>
+              <p className="text-gray-400 text-sm">Crée ton premier défi pour personnaliser l'expérience</p>
+            </div>
+          )}
+        </div>
+        {showCreateDareModal && <CreateDareModal />}
+        {showEditDareModal && <CreateDareModal editingDare={editingDare} />}
+        <BottomNav />
+      </div>
+    );
+  };
 
   // Profile View - VERSION PERSONNALISÉE
   const ProfileView = () => (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 pb-20">
+    <div className="min-h-screen bg-black pb-20">
       <div className="p-6">
         {/* En-tête de profil */}
         <div className="text-center mb-8 relative">
@@ -1675,7 +2397,7 @@ const App = () => {
               <div className="flex items-center gap-2">
                 {item.badge}
                 <span className="text-gray-400 text-sm">{item.value}</span>
-                <ChevronRight className="w-5 h-5 text-gray-600" />
+                <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
             </button>
           ))}
@@ -1695,25 +2417,29 @@ const App = () => {
     </div>
   );
 
-  // Router
+  // Router avec transitions
   const renderView = () => {
-    if (!isAuthenticated) return <LoginView />;
+    if (!isAuthenticated) return <div className="animate-fade-in"><LoginView /></div>;
     
-    switch(currentView) {
-      case 'home': return <HomeView />;
-      case 'friends': return <FriendsView />;
-      case 'customDares': return <CustomDaresView />;
-      case 'profile': return <ProfileView />;
-      case 'selectPlayers': return <SelectPlayersView />;
-      case 'selectMode': return <SelectModeView />;
-      case 'selectCategories': return <SelectCategoriesView />;
-      case 'game': return <GameView />;
-      case 'subscription': return <SubscriptionView />;
-      default: return <HomeView />;
-    }
+    const ViewComponent = (() => {
+      switch(currentView) {
+        case 'home': return <HomeView />;
+        case 'friends': return <FriendsView />;
+        case 'customDares': return <CustomDaresView />;
+        case 'profile': return <ProfileView />;
+        case 'selectPlayers': return <SelectPlayersView />;
+        case 'selectMode': return <SelectModeView />;
+        case 'selectCategories': return <SelectCategoriesView />;
+        case 'game': return <GameView />;
+        case 'subscription': return <SubscriptionView />;
+        default: return <HomeView />;
+      }
+    })();
+    
+    return <div key={currentView} className="animate-fade-in">{ViewComponent}</div>;
   };
 
-  return <div className="font-sans antialiased">{renderView()}</div>;
+  return <div className="font-sans antialiased bg-black min-h-screen">{renderView()}</div>;
 };
 
 export default App;
